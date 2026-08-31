@@ -4,11 +4,13 @@ on:
     - cron: '0 */6 * * *'
   workflow_dispatch:
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      # 必须先检出本仓库！缺少这一步直接报 not in a git directory
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
@@ -21,3 +23,15 @@ jobs:
           upstream_sync_branch: main
           target_sync_branch: main
           target_repo_token: ${{ secrets.GITHUB_TOKEN }}
+
+      # ==========新增：同步完成后，中文README.zh_CN.md覆盖README.md，主页默认中文==========
+      - name: Overwrite README.md with Chinese README.zh_CN.md
+        run: |
+          cp -f README.zh_CN.md README.md
+          git config --global user.name "github‑actions[bot]"
+          git config --global user.email "github‑actions[bot]@users.noreply.github.com"
+
+      - name: Commit & Push Chinese README
+        run: |
+          git add README.md
+          git diff --quiet && git diff --staged --quiet || (git commit -m "auto: use README.zh_CN.md as main README" && git push)
