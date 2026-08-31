@@ -13,8 +13,9 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+        # 不要关闭凭证，保留token用于后续git push
         with:
-          persist-credentials: false
+          fetch-depth: 0
 
       - name: Sync fork from MHSanaei/3x-ui
         uses: aormsby/Fork-Sync-With-Upstream-action@v3.4
@@ -24,7 +25,6 @@ jobs:
           target_sync_branch: main
           target_repo_token: ${{ secrets.GITHUB_TOKEN }}
 
-      # ==========新增：同步完成后，中文README.zh_CN.md覆盖README.md，主页默认中文==========
       - name: Overwrite README.md with Chinese README.zh_CN.md
         run: |
           cp -f README.zh_CN.md README.md
@@ -34,4 +34,7 @@ jobs:
       - name: Commit & Push Chinese README
         run: |
           git add README.md
-          git diff --quiet && git diff --staged --quiet || (git commit -m "auto: use README.zh_CN.md as main README" && git push)
+          if ! git diff --quiet --staged; then
+            git commit -m "auto: use README.zh_CN.md as main README"
+            git push
+          fi
